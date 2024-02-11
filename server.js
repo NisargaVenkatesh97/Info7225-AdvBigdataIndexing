@@ -15,7 +15,7 @@ app.post("/plan", async(req,res) => {
     const { body } = req;
     const validCheck = validate(body);
     if(!validCheck){
-        res.sendStatus(304)
+        res.sendStatus(400).send("Invalid request");
     }
     else{
         const redisData = await client.set(
@@ -27,7 +27,7 @@ app.post("/plan", async(req,res) => {
         );
         console.log("stored Json data",storedJsonData);
 
-        res.sendStatus(200).send(storedJsonData);
+        res.sendStatus(200);
             
     }
 } );
@@ -50,6 +50,28 @@ app.get("/plan/:id", async(req, res) =>{
             res.send(data);
         }
     }
+});
+
+app.get("/plan", async(req, res) =>{
+    try{
+        console.log("hitting here")
+        const keys = await client.keys("*");
+        console.log("the keys", keys)
+        const values = await Promise.all(
+            keys.map(async (key) => {
+                return JSON.parse(await client.get(key))
+            })
+        );
+        console.log("values",values);
+        if(values.length == 0){
+            res.sendStatus(204);
+        } else{
+            res.status(200).send(values);
+        }   
+    }catch(error){
+        res.sendStatus(500);
+    }
+
 });
 
 app.delete("/plan/:id", async(req,res) =>{
